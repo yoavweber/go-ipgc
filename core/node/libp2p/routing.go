@@ -2,6 +2,9 @@ package libp2p
 
 import (
 	"context"
+	"github.com/ipfs/go-ipfs/repo"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
+	"github.com/libp2p/go-libp2p-kad-dht/fullrt"
 	"sort"
 	"time"
 
@@ -32,23 +35,81 @@ type p2pRouterOut struct {
 	Router Router `group:"routers"`
 }
 
-func BaseRouting(lc fx.Lifecycle, in BaseIpfsRouting) (out p2pRouterOut, dr *ddht.DHT) {
-	if dht, ok := in.(*ddht.DHT); ok {
-		dr = dht
+type processInitialRoutingIn struct {
+	fx.In
 
-		lc.Append(fx.Hook{
-			OnStop: func(ctx context.Context) error {
-				return dr.Close()
+	Router routing.Routing `name:"initialrouting"`
+
+	// For setting up experimental DHT client
+	Host 	host.Host
+	Repo          repo.Repo
+	Validator     record.Validator
+}
+
+type processInitialRoutingOut struct {
+	fx.Out
+
+	Router Router `group:"routers"`
+	DHT *ddht.DHT
+	DHTClient routing.Routing `name:"dhtc"`
+	BaseRT BaseIpfsRouting
+}
+
+func BaseRouting(experimentalDHTClient bool) interface{} {
+	return func(mctx helpers.MetricsCtx, lc fx.Lifecycle, in processInitialRoutingIn) (out processInitialRoutingOut, err error) {
+		var dr *ddht.DHT
+		if dht, ok := in.Router.(*ddht.DHT); ok {
+			dr = dht
+
+			lc.Append(fx.Hook{
+				OnStop: func(ctx context.Context) error {
+					return dr.Close()
+				},
+			})
+		}
+
+		if dr != nil && experimentalDHTClient {
+			ctx := helpers.LifecycleCtx(mctx, lc)
+			cfg, err := in.Repo.Config()
+			if err != nil {
+				return out, err
+			}
+			bspeers, err := cfg.BootstrapPeers()
+			if err != nil {
+				return out, err
+			}
+
+			expClient, err := fullrt.NewFullRT(ctx, in.Host,
+				dht.DefaultPrefix,
+				fullrt.Validator(in.Validator),
+				fullrt.Datastore(in.Repo.Datastore()),
+				fullrt.BootstrapPeers(bspeers...))
+			if err != nil {
+				return out, err
+			}
+
+			// TODO: Start/Stop exp client
+
+			return processInitialRoutingOut{
+				Router: Router{
+					Routing:  expClient,
+					Priority: 1000,
+				},
+				DHT:       dr,
+				DHTClient: expClient,
+				BaseRT: expClient,
+			}, nil
+		}
+
+		return processInitialRoutingOut{
+			Router: Router{
+				Priority: 1000,
+				Routing:  in.Router,
 			},
-		})
+			DHT: dr,
+			BaseRT: dr,
+		}, nil
 	}
-
-	return p2pRouterOut{
-		Router: Router{
-			Priority: 1000,
-			Routing:  in,
-		},
-	}, dr
 }
 
 type p2pOnlineRoutingIn struct {

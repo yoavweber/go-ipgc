@@ -45,6 +45,12 @@ const (
 	dhtVerboseOptionName = "verbose"
 )
 
+// kademlia extends the routing interface with a command to get the peers closest to the target
+type kademlia interface {
+	routing.Routing
+	GetClosestPeers(ctx context.Context, key string) ([]peer.ID, error)
+}
+
 var queryDhtCmd = &cmds.Command{
 	Helptext: cmds.HelpText{
 		Tagline:          "Find the closest Peer IDs to a given Peer ID by querying the DHT.",
@@ -63,7 +69,7 @@ var queryDhtCmd = &cmds.Command{
 			return err
 		}
 
-		if nd.DHT == nil {
+		if nd.DHTClient == nil {
 			return ErrNotDHT
 		}
 
@@ -74,6 +80,32 @@ var queryDhtCmd = &cmds.Command{
 
 		ctx, cancel := context.WithCancel(req.Context)
 		ctx, events := routing.RegisterForQueryEvents(ctx)
+
+		if d, ok := nd.DHTClient.(kademlia); ok {
+			peers, err := d.GetClosestPeers(ctx, string(id))
+			if err != nil {
+				return err
+			}
+
+			go func() {
+				defer cancel()
+				for _, p := range peers {
+					routing.PublishQueryEvent(ctx, &routing.QueryEvent{
+						ID:   p,
+						Type: routing.FinalPeer,
+					})
+				}
+			}()
+
+			for e := range events {
+				if err := res.Emit(e); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		}
+
 
 		dht := nd.DHT.WAN
 		if !nd.DHT.WANActive() {
