@@ -106,7 +106,6 @@ var queryDhtCmd = &cmds.Command{
 			return nil
 		}
 
-
 		dht := nd.DHT.WAN
 		if !nd.DHT.WANActive() {
 			dht = nd.DHT.LAN

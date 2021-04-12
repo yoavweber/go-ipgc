@@ -44,7 +44,7 @@ This interface is not stable and may change from release to release.
 `,
 	},
 	Arguments: []cmds.Argument{
-		cmds.StringArg("dht", false, true, "The DHT whose table should be listed (wanserver, lanserver, wan, lan). " +
+		cmds.StringArg("dht", false, true, "The DHT whose table should be listed (wanserver, lanserver, wan, lan). "+
 			"wan and lan refer to client routing tables. When using the experimental DHT client only WAN is supported. Defaults to wan and lan."),
 	},
 	Options: []cmds.Option{},
@@ -70,7 +70,7 @@ This interface is not stable and may change from release to release.
 			dhts = []string{"wan", "lan"}
 		}
 
-		dhttypeloop:
+	dhttypeloop:
 		for _, name := range dhts {
 			var dht *dht.IpfsDHT
 

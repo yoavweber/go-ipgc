@@ -41,18 +41,18 @@ type processInitialRoutingIn struct {
 	Router routing.Routing `name:"initialrouting"`
 
 	// For setting up experimental DHT client
-	Host 	host.Host
-	Repo          repo.Repo
-	Validator     record.Validator
+	Host      host.Host
+	Repo      repo.Repo
+	Validator record.Validator
 }
 
 type processInitialRoutingOut struct {
 	fx.Out
 
-	Router Router `group:"routers"`
-	DHT *ddht.DHT
+	Router    Router `group:"routers"`
+	DHT       *ddht.DHT
 	DHTClient routing.Routing `name:"dhtc"`
-	BaseRT BaseIpfsRouting
+	BaseRT    BaseIpfsRouting
 }
 
 func BaseRouting(experimentalDHTClient bool) interface{} {
@@ -97,7 +97,7 @@ func BaseRouting(experimentalDHTClient bool) interface{} {
 				},
 				DHT:       dr,
 				DHTClient: expClient,
-				BaseRT: expClient,
+				BaseRT:    expClient,
 			}, nil
 		}
 
@@ -106,7 +106,7 @@ func BaseRouting(experimentalDHTClient bool) interface{} {
 				Priority: 1000,
 				Routing:  in.Router,
 			},
-			DHT: dr,
+			DHT:    dr,
 			BaseRT: dr,
 		}, nil
 	}

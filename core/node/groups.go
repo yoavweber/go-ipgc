@@ -138,7 +138,7 @@ func LibP2P(bcfg *BuildCfg, cfg *config.Config) fx.Option {
 		fx.Provide(libp2p.Security(!bcfg.DisableEncryptedConnections, cfg.Swarm.Transports)),
 
 		fx.Provide(libp2p.Routing),
-		fx.Provide(libp2p.BaseRouting(cfg.Experimental.DHTCrawlerClient || true)), // TODO: Remove short-circuit
+		fx.Provide(libp2p.BaseRouting(cfg.Experimental.DHTCrawlerClient)),
 		maybeProvide(libp2p.PubsubRouter, bcfg.getOpt("ipnsps")),
 
 		maybeProvide(libp2p.BandwidthCounter, !cfg.Swarm.DisableBandwidthMetrics),
@@ -273,7 +273,7 @@ func Online(bcfg *BuildCfg, cfg *config.Config) fx.Option {
 		fx.Provide(p2p.New),
 
 		LibP2P(bcfg, cfg),
-		OnlineProviders(cfg.Experimental.StrategicProviding, cfg.Reprovider.Strategy, cfg.Reprovider.Interval),
+		OnlineProviders(cfg.Experimental.StrategicProviding, cfg.Experimental.DHTCrawlerClient, cfg.Reprovider.Strategy, cfg.Reprovider.Interval),
 	)
 }
 
@@ -283,7 +283,7 @@ func Offline(cfg *config.Config) fx.Option {
 		fx.Provide(offline.Exchange),
 		fx.Provide(Namesys(0)),
 		fx.Provide(offroute.NewOfflineRouter),
-		OfflineProviders(cfg.Experimental.StrategicProviding, cfg.Reprovider.Strategy, cfg.Reprovider.Interval),
+		OfflineProviders(cfg.Experimental.StrategicProviding, cfg.Experimental.DHTCrawlerClient, cfg.Reprovider.Strategy, cfg.Reprovider.Interval),
 	)
 }
 
@@ -313,6 +313,8 @@ func IPFS(ctx context.Context, bcfg *BuildCfg) fx.Option {
 	if cfg == nil {
 		return bcfgOpts // error
 	}
+
+	cfg.Experimental.DHTCrawlerClient = true // TODO: Hack for testing
 
 	// TEMP: setting global sharding switch here
 	uio.UseHAMTSharding = cfg.Experimental.ShardingEnabled

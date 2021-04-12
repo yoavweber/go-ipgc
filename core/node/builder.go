@@ -106,7 +106,7 @@ func (cfg *BuildCfg) options(ctx context.Context) (fx.Option, *cfg.Config) {
 	})
 
 	routingOption := fx.Provide(func() libp2p.RoutingOption {
-			return cfg.Routing
+		return cfg.Routing
 	})
 
 	conf, err := cfg.Repo.Config()
