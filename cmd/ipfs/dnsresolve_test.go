@@ -22,14 +22,16 @@ func makeResolver(n uint8) *madns.Resolver {
 		results[i] = net.IPAddr{IP: net.ParseIP(fmt.Sprintf("192.0.2.%d", i))}
 	}
 
-	backend := &madns.MockBackend{
+	backend := &madns.MockResolver{
 		IP: map[string][]net.IPAddr{
 			"example.com": results,
 		}}
 
-	return &madns.Resolver{
-		Backend: backend,
+	rslv, err := madns.NewResolver(madns.WithDefaultResolver(backend))
+	if err != nil {
+		panic(err)
 	}
+	return rslv
 }
 
 func TestApiEndpointResolveDNSOneResult(t *testing.T) {
