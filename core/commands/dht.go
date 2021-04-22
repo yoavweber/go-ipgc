@@ -79,6 +79,7 @@ var queryDhtCmd = &cmds.Command{
 		}
 
 		ctx, cancel := context.WithCancel(req.Context)
+		defer cancel()
 		ctx, events := routing.RegisterForQueryEvents(ctx)
 
 		if d, ok := nd.DHTClient.(kademlia); ok {
