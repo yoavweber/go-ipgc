@@ -64,6 +64,7 @@ func SimpleProviderSys(isOnline bool) interface{} {
 
 type provideMany interface {
 	ProvideMany(ctx context.Context, keys []multihash.Multihash) error
+	Ready() bool
 }
 
 // BatchedProviderSys creates new provider system

@@ -81,9 +81,10 @@ func BaseRouting(experimentalDHTClient bool) interface{} {
 
 			expClient, err := fullrt.NewFullRT(ctx, in.Host,
 				dht.DefaultPrefix,
-				fullrt.Validator(in.Validator),
-				fullrt.Datastore(in.Repo.Datastore()),
-				fullrt.BootstrapPeers(bspeers...))
+				dht.Validator(in.Validator),
+				dht.Datastore(in.Repo.Datastore()),
+				dht.BootstrapPeers(bspeers...),
+				dht.BucketSize(20))
 			if err != nil {
 				return out, err
 			}
