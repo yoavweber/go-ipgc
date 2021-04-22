@@ -2,16 +2,12 @@ package commands
 
 import (
 	"fmt"
-	cmds "github.com/ipfs/go-ipfs-cmds"
-	"github.com/ipfs/go-ipfs-provider/batched"
-	"github.com/ipfs/go-ipfs/core/commands/cmdenv"
-	"time"
-)
 
-type providerStat struct {
-	TotalToProvide, NumRecentlyProvided, TotalProvidesLifetime int
-	AvgProvideTime                                             time.Duration
-}
+	cmds "github.com/ipfs/go-ipfs-cmds"
+	"github.com/ipfs/go-ipfs/core/commands/cmdenv"
+
+	"github.com/ipfs/go-ipfs-provider/batched"
+)
 
 var statProvideCmd = &cmds.Command{
 	Helptext: cmds.HelpText{
@@ -39,22 +35,17 @@ This interface is not stable and may change from release to release.
 			return fmt.Errorf("can only return stats if the experimental DHT client is enabled")
 		}
 
-		total, recentlyProvided, totalProvides, avgProvideTime, err := sys.Stat(req.Context)
+		stats, err := sys.Stat(req.Context)
 		if err != nil {
 			return err
 		}
 
-		if err := res.Emit(providerStat{
-			TotalToProvide:        total,
-			NumRecentlyProvided:   recentlyProvided,
-			TotalProvidesLifetime: totalProvides,
-			AvgProvideTime:        avgProvideTime,
-		}); err != nil {
+		if err := res.Emit(stats); err != nil {
 			return err
 		}
 
 		return nil
 	},
 	Encoders: cmds.EncoderMap{},
-	Type:     providerStat{},
+	Type:     batched.BatchedProviderStats{},
 }
