@@ -2,7 +2,9 @@ package coreapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/ipfs/go-ipfs/core"
@@ -54,7 +56,17 @@ func getOrCreateNilNode() (*core.IpfsNode, error) {
 
 // Add builds a merkledag node from a reader, adds it to the blockstore,
 // and returns the key representing that node.
-func (api *UnixfsAPI) Add(ctx context.Context, files files.Node, opts ...options.UnixfsAddOption) (path.Resolved, error) {
+func (api *UnixfsAPI) Add(ctx context.Context, filess files.Node, opts ...options.UnixfsAddOption) (path.Resolved, error) {
+	// fmt.Println(&filess, "the address?")
+	fmt.Println(reflect.Indirect(reflect.ValueOf(filess)).Type().Field(3).Name)
+	if reflect.Indirect(reflect.ValueOf(filess)).Type().Field(3).Name == "fsize" {
+		path := filess.(files.FileInfo).AbsPath()
+		if path[len(path)-3:] != "igc" {
+			return nil, errors.New("Expected an .igc file")
+
+		}
+	}
+
 	settings, prefix, err := options.UnixfsAddOptions(opts...)
 	if err != nil {
 		return nil, err
@@ -164,7 +176,7 @@ func (api *UnixfsAPI) Add(ctx context.Context, files files.Node, opts ...options
 		fileAdder.SetMfsRoot(mr)
 	}
 
-	nd, err := fileAdder.AddAllAndPin(files)
+	nd, err := fileAdder.AddAllAndPin(filess)
 	if err != nil {
 		return nil, err
 	}
