@@ -64,13 +64,22 @@ func checkIgc(file files.Node) error {
 		path := file.(files.FileInfo).AbsPath()
 		pathArray := strings.Split(path, "/")
 		fileName := pathArray[len(pathArray)-1]
-
 		if fileName[len(fileName)-3:] != "igc" && fileName != "metadata.txt" {
 			return errors.New("Expected an .igc file")
 		}
 	} else if reflect.Indirect(reflect.ValueOf(file)).Type().Field(3).Name == "filter" {
 		dirIt := file.(files.Directory).Entries()
+		if dirIt.Next() == false {
+			return errors.New("can't add an empty directory")
+		}
+
+		file := dirIt.Node()
+		notIgc := checkIgc(file)
+		if notIgc != nil {
+			return notIgc
+		}
 		for dirIt.Next() {
+
 			file := dirIt.Node()
 			notIgc := checkIgc(file)
 			if notIgc != nil {
