@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
@@ -62,9 +63,9 @@ func checkIgc(file files.Node) error {
 
 	if reflect.Indirect(reflect.ValueOf(file)).Type().Field(3).Name == "fsize" {
 		path := file.(files.FileInfo).AbsPath()
-		pathArray := strings.Split(path, "/")
-		fileName := pathArray[len(pathArray)-1]
+		fileName := filepath.Base(path)
 		if fileName[len(fileName)-3:] != "igc" && fileName != "metadata.txt" {
+			file.Close()
 			return errors.New("Expected an .igc file")
 		}
 	} else if reflect.Indirect(reflect.ValueOf(file)).Type().Field(3).Name == "filter" {
@@ -76,15 +77,19 @@ func checkIgc(file files.Node) error {
 		file := dirIt.Node()
 		notIgc := checkIgc(file)
 		if notIgc != nil {
+			file.Close()
 			return notIgc
 		}
+		file.Close()
 		for dirIt.Next() {
 
 			file := dirIt.Node()
 			notIgc := checkIgc(file)
 			if notIgc != nil {
+				file.Close()
 				return notIgc
 			}
+			file.Close()
 
 		}
 		if dirIt.Err() != nil {
