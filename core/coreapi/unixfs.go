@@ -54,15 +54,40 @@ func getOrCreateNilNode() (*core.IpfsNode, error) {
 	return nilNode, nil
 }
 
-// Add builds a merkledag node from a reader, adds it to the blockstore,
-// and returns the key representing that node.
-func (api *UnixfsAPI) Add(ctx context.Context, file files.Node, opts ...options.UnixfsAddOption) (path.Resolved, error) {
+func checkIgc(file files.Node) error {
+
 	if reflect.Indirect(reflect.ValueOf(file)).Type().Field(3).Name == "fsize" {
 		path := file.(files.FileInfo).AbsPath()
 		if path[len(path)-3:] != "igc" {
-			return nil, errors.New("Expected an .igc file")
+			return errors.New("Expected an .igc file")
 
 		}
+	} else if reflect.Indirect(reflect.ValueOf(file)).Type().Field(3).Name == "filter" {
+		dirIt := file.(files.Directory).Entries()
+		for dirIt.Next() {
+			file := dirIt.Node()
+			notIgc := checkIgc(file)
+			if notIgc != nil {
+				return notIgc
+			}
+
+		}
+		if dirIt.Err() != nil {
+
+			return errors.New("Internal error with file iterator")
+		}
+	}
+	return nil
+}
+
+// Add builds a merkledag node from a reader, adds it to the blockstore,
+// and returns the key representing that node.
+func (api *UnixfsAPI) Add(ctx context.Context, file files.Node, opts ...options.UnixfsAddOption) (path.Resolved, error) {
+
+	notIgc := checkIgc(file)
+
+	if notIgc != nil {
+		return nil, notIgc
 	}
 
 	settings, prefix, err := options.UnixfsAddOptions(opts...)
