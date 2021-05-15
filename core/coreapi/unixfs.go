@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"sync"
 
 	"github.com/ipfs/go-ipfs/core"
