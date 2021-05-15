@@ -1,4 +1,4 @@
-module github.com/yoavweber/go-pgfs/v1
+module github.com/yoavweber/go-pgfs
 
 require (
 	bazil.org/fuse v0.0.0-20200117225306-7b5117fecadc
