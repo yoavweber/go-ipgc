@@ -92,6 +92,8 @@ func (api *UnixfsAPI) Add(ctx context.Context, file files.Node, opts ...options.
 
 	notIgc := checkIgc(file)
 
+	file.Close()
+
 	if notIgc != nil {
 		return nil, notIgc
 	}
