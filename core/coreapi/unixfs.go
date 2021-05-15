@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/ipfs/go-ipfs/core"
@@ -55,12 +56,17 @@ func getOrCreateNilNode() (*core.IpfsNode, error) {
 }
 
 func checkIgc(file files.Node) error {
+	if file == nil {
+		return errors.New("Tried to add a file to the network but recived nil")
+	}
 
 	if reflect.Indirect(reflect.ValueOf(file)).Type().Field(3).Name == "fsize" {
 		path := file.(files.FileInfo).AbsPath()
-		if path[len(path)-3:] != "igc" {
-			return errors.New("Expected an .igc file")
+		pathArray := strings.Split(path, "/")
+		fileName := pathArray[len(pathArray)-1]
 
+		if fileName[len(fileName)-3:] != "igc" && fileName != "metadata.txt" {
+			return errors.New("Expected an .igc file")
 		}
 	} else if reflect.Indirect(reflect.ValueOf(file)).Type().Field(3).Name == "filter" {
 		dirIt := file.(files.Directory).Entries()
